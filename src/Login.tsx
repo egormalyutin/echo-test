@@ -45,6 +45,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// This component isn't intended to be unmounted.
 export default function Login({ onLogIn }: { onLogIn?: () => void }) {
   const classes = useStyles();
 

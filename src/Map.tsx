@@ -40,7 +40,7 @@ const useStyles = makeStyles({
 });
 
 // This component isn't intended to be unmounted.
-export default function Map({ next }: { next?: () => {} }) {
+export default function Map({ next }: { next?: () => void }) {
   const mapRef = useRef(null);
   const classes = useStyles();
 
