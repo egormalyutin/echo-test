@@ -17,11 +17,16 @@ import { MoveToInbox, Mail } from "@material-ui/icons";
 
 import SwipeableView from "react-swipeable-views";
 
-import Login from "./Login";
+// import Login from "./Login";
+import Map from "./Map";
 
 const useStyles = makeStyles({
   container: {
     minWidth: 300,
+  },
+  mapContainer: {
+    height: "100%",
+    maxHeight: "100%",
   },
 });
 
@@ -34,35 +39,44 @@ export default function App() {
   const [screen, setScreen] = useState(0);
 
   return (
-    <div>
-      <SwipeableView disabled index={screen}>
-        <Login onLogIn={() => setScreen(1)} />
-        <div>
-          <Button onClick={setDrawer(true)}>Left</Button>
-          <SwipeableDrawer
-            anchor={"left"}
-            open={anchor}
-            onClose={setDrawer(false)}
-            onOpen={setDrawer(true)}
-          >
-            <Container
-              className={classes.container}
-              role="presentation"
-              onClick={setDrawer(false)}
-              onKeyDown={setDrawer(false)}
-            >
-              <List>
-                {[<MoveToInbox />, <Mail />].map((icon, index) => (
-                  <ListItem button key={index}>
-                    <ListItemIcon>{icon}</ListItemIcon>
-                    <ListItemText primary={`Экран ${index}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Container>
-          </SwipeableDrawer>
-        </div>
-      </SwipeableView>
+    <div className={classes.mapContainer}>
+      <Map />
     </div>
   );
+
+  // return (
+  // <SwipeableView disabled index={screen}>
+  // <Login onLogIn={() => setScreen(1)} />
+
+  // <div className={classes.mapContainer}>
+  // <Map />
+  // </div>
+
+  // <div>
+  // <Button onClick={setDrawer(true)}>Left</Button>
+  // <SwipeableDrawer
+  // anchor={"left"}
+  // open={anchor}
+  // onClose={setDrawer(false)}
+  // onOpen={setDrawer(true)}
+  // >
+  // <Container
+  // className={classes.container}
+  // role="presentation"
+  // onClick={setDrawer(false)}
+  // onKeyDown={setDrawer(false)}
+  // >
+  // <List>
+  // {[<MoveToInbox />, <Mail />].map((icon, index) => (
+  // <ListItem button key={index}>
+  // <ListItemIcon>{icon}</ListItemIcon>
+  // <ListItemText primary={`Экран ${index}`} />
+  // </ListItem>
+  // ))}
+  // </List>
+  // </Container>
+  // </SwipeableDrawer>
+  // </div>
+  // </SwipeableView>
+  // );
 }
