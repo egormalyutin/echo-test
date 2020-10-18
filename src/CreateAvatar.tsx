@@ -1,7 +1,15 @@
 import React, { useRef, useEffect, useState, ReactNode } from "react";
 
 import { makeStyles } from "@material-ui/core/styles";
-import { Button } from "@material-ui/core";
+
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+  DialogTitle,
+} from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   avatar: {
@@ -28,6 +36,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// Component which wraps its children into a circle with border.
 export function Avatar({
   children,
   size,
@@ -44,17 +53,37 @@ export function Avatar({
   );
 }
 
-// This component isn't intended to be unmounted.
-export default function CreateAvatar() {
+// Screen for taking a photo for avatar.
+export default function CreateAvatar({
+  onCreated,
+}: {
+  onCreated?: (image: string) => void;
+}) {
   const classes = useStyles();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [onClick, setOnClick] = useState();
 
-  const [blob, setBlob] = useState<string | undefined>();
+  const [dialog, setDialog] = useState(false);
 
-  useEffect(() => {
+  const videoListener = useRef<() => void | null>();
+
+  // Turn off the camera when component gets unmounted.
+  useEffect(
+    () => () => {
+      const video = videoRef.current;
+      if (!(video?.srcObject instanceof MediaStream)) return;
+
+      video.pause();
+      video.srcObject.getTracks().forEach((t) => t.stop());
+      video.srcObject = null;
+    },
+    []
+  );
+
+  // Try to access the camera, and open the camera dialog otherwise.
+  const tryCamera = () => {
     const width = 320;
     let height = 0;
 
@@ -64,40 +93,46 @@ export default function CreateAvatar() {
     const canvas = canvasRef.current!;
     const context = canvas.getContext("2d")!;
 
+    // Request access to the camera
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: false })
+      .getUserMedia({ video: { facingMode: "user" }, audio: false })
       .then((stream) => {
         video.srcObject = stream;
         video.play();
+
+        // Bravo, React.
+        setOnClick(() => () => {
+          if (!onCreated) return;
+
+          canvas.width = width;
+          canvas.height = height;
+
+          context.drawImage(video, 0, 0, width, height);
+          onCreated(canvas.toDataURL());
+        });
       })
-      .catch((err) => {
-        console.log("An error occurred: " + err);
-      });
+      .catch(() => setDialog(true));
 
-    video.addEventListener(
-      "canplay",
-      () => {
-        if (!streaming) {
-          height = video.videoHeight / (video.videoWidth / width);
-          video.height = height;
+    // Remove old event listener
+    if (videoListener.current)
+      video.removeEventListener("canplay", videoListener.current);
 
-          streaming = true;
-        }
-      },
-      false
-    );
+    videoListener.current = () => {
+      if (!streaming) {
+        // Resize the video to needed resolution.
+        height = video.videoHeight / (video.videoWidth / width);
+        video.width = width;
+        video.height = height;
 
-    // Bravo, React
-    setOnClick(() => () => {
-      console.log(123);
+        streaming = true;
+      }
+    };
 
-      canvas.width = width;
-      canvas.height = height;
+    video.addEventListener("canplay", videoListener.current);
+  };
 
-      context.drawImage(video, 0, 0, width, height);
-      setBlob(canvas.toDataURL());
-    });
-  }, []);
+  // Try to access the camera on start
+  useEffect(tryCamera, []);
 
   return (
     <div className={classes.paper}>
@@ -105,10 +140,38 @@ export default function CreateAvatar() {
         <video ref={videoRef} />
       </Avatar>
 
-      <img src={blob} />
       <Button onClick={onClick}>Установить фото</Button>
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      <CameraDialog open={dialog} onClose={tryCamera} />
+    </div>
+  );
+}
+
+// Dialog that says "please allow the camera".
+function CameraDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <div>
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>Камера</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Пожалуйста, разрешите использовать камеру
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="primary">
+            Ок
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

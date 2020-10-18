@@ -1,12 +1,10 @@
-import React, { useState } from "react";
-import clsx from "clsx";
+import React, { useState, useEffect, useCallback } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 
 import {
   SwipeableDrawer,
   Button,
   List,
-  Divider,
   ListItem,
   ListItemIcon,
   ListItemText,
@@ -31,13 +29,33 @@ const useStyles = makeStyles({
   },
 });
 
-export default function App() {
+type UserData = {
+  image: string;
+};
+
+function MeetScreen({ finish }: { finish: (data: UserData) => void }) {
   const classes = useStyles();
-  const [anchor, setAnchor] = useState(false);
-
-  const setDrawer = (to: boolean) => () => setAnchor(to);
-
   const [screen, setScreen] = useState(0);
+
+  const push = () => {
+    window.history.pushState({}, document.title);
+    setScreen((s) => s + 1);
+  };
+
+  const pop = useCallback(() => {
+    setScreen((s) => (s > 0 ? s - 1 : s));
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("popstate", pop);
+    return () => {
+      window.removeEventListener("popstate", pop);
+    };
+  }, [pop]);
+
+  const end = (image: string) => {
+    finish({ image });
+  };
 
   return (
     <SwipeableView
@@ -46,39 +64,49 @@ export default function App() {
       containerStyle={{ height: "100%" }}
       style={{ height: "100%" }}
     >
-      <Login onLogIn={() => setScreen(1)} />
+      <Login onLogIn={push} />
 
       <div className={classes.mapContainer}>
-        <Map next={() => setScreen(2)} />
+        <Map next={push} />
       </div>
 
-      <CreateAvatar />
-
-      <div>
-        <Button onClick={setDrawer(true)}>Left</Button>
-        <SwipeableDrawer
-          anchor={"left"}
-          open={anchor}
-          onClose={setDrawer(false)}
-          onOpen={setDrawer(true)}
-        >
-          <Container
-            className={classes.container}
-            role="presentation"
-            onClick={setDrawer(false)}
-            onKeyDown={setDrawer(false)}
-          >
-            <List>
-              {[<MoveToInbox />, <Mail />].map((icon, index) => (
-                <ListItem button key={index}>
-                  <ListItemIcon>{icon}</ListItemIcon>
-                  <ListItemText primary={`Экран ${index}`} />
-                </ListItem>
-              ))}
-            </List>
-          </Container>
-        </SwipeableDrawer>
-      </div>
+      <div>{screen == 2 ? <CreateAvatar onCreated={end} /> : null}</div>
     </SwipeableView>
+  );
+}
+
+export default function App() {
+  const classes = useStyles();
+  const [anchor, setAnchor] = useState(false);
+
+  const setDrawer = (to: boolean) => () => setAnchor(to);
+
+  return (
+    <MeetScreen finish={() => console.log(123)} />
+    // <div>
+    // <Button onClick={setDrawer(true)}>Left</Button>
+    // <SwipeableDrawer
+    // anchor={"left"}
+    // open={anchor}
+    // onClose={setDrawer(false)}
+    // onOpen={setDrawer(true)}
+    // >
+    // <Container
+    // className={classes.container}
+    // role="presentation"
+    // onClick={setDrawer(false)}
+    // onKeyDown={setDrawer(false)}
+    // >
+    // <List>
+    // {[<MoveToInbox />, <Mail />].map((icon, index) => (
+    // <ListItem button key={index}>
+    // <ListItemIcon>{icon}</ListItemIcon>
+    // <ListItemText primary={`Экран ${index}`} />
+    // </ListItem>
+    // ))}
+    // </List>
+    // </Container>
+    // </SwipeableDrawer>
+    // </div>
   );
 }
